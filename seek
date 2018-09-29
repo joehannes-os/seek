@@ -1,0 +1,48 @@
+#!/usr/bin/zsh
+
+zparseopts -D -E -- p:=_path -path:=_path r:=regex -regex:=regex
+getopts g gi
+
+PATH=/usr/local/bin:/bin:/usr/bin:/usr/sbin
+
+
+wd=`echo $(pwd)`
+wd_safe=$(echo -n $wd | sed 's/\//\\\//g')
+
+if [[ $(echo -n $_path[2] | wc -m) < 1 ]]; then
+	if [[ $1=-g ]]; then
+		_path=$2
+	else
+		_path=$1
+	fi
+else
+	_path=$_path[2]
+fi
+if [[ $(echo -n $regex[2] | wc -m) < 1 ]]; then
+	if [[ $1=-g ]]; then
+		regex=$3
+	else
+		regex=$2
+	fi
+else
+	regex=$regex[2]
+fi
+
+echo $_path
+echo $regex
+
+_path=`echo -n $_path | sed "s/^\.\//$wd_safe\//"`
+_path_safe=$(echo -n $_path | sed 's/\//\\\//g')
+
+cd "$_path"
+
+if [[ $(echo -n $gi | wc -m) > 0 ]]; then
+	find . -regex "$regex" -type f | git check-ignore --stdin -v -n | grep -v gitignore | sed 's/^::\s*//g' | peco | sed "s/^\.\//$_path_safe\//" | xsel -b
+else
+	find . -regex "$regex" -type f | peco | sed "s/^\.\//$_path_safe\//" $res | xsel -b
+
+fi
+
+echo $res
+
+exit 0
